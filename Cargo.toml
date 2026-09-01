@@ -4,3 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+bme280 = "0.5.1"
+cortex-m = "0.7.9"
+cortex-m-rt = "0.7.6"
+heapless = "0.9.3"
+rp235x-hal = "0.4.0"
