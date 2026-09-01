@@ -1,7 +1,7 @@
 #![no_std]
 
 use bme280::i2c::BME280;
-use rp235x_hal::{I2C, Timer, gpio, pac::I2C1, timer::CopyableTimer0};
+use rp235x_hal::{I2C, Timer, gpio, pac::I2C1};
 
 struct BME280Data
 {
@@ -68,8 +68,29 @@ impl<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId>
         }
     }
 
-    pub fn init(&mut self, mut timer: Timer<CopyableTimer0>)
+    pub fn new_with_custom_address(i2c: I2C<I2C1, (
+        gpio::Pin<I2CGpioPin1, gpio::FunctionI2c, gpio::PullUp>, 
+        gpio::Pin<I2CGpioPin2, gpio::FunctionI2c, gpio::PullUp>
+        )>, i2c_address: u8) -> TRANTOR_BME280<I2CGpioPin1, I2CGpioPin2>
     {
-        self.bme.init(&mut timer);
+        return TRANTOR_BME280
+        {
+            bme: BME280::new(i2c, i2c_address),
+            recent_data: BME280Data::new_null()
+        }
+    }
+
+    pub fn init<CopyableTimer: rp235x_hal::timer::TimerDevice>(&mut self, mut timer: Timer<CopyableTimer>)
+    {
+        self.bme.init(&mut timer).expect("Initializing BME280");
+    }
+
+    pub fn record_data<CopyableTimer: rp235x_hal::timer::TimerDevice>(&mut self, mut timer: Timer<CopyableTimer>)
+    {
+        let measurements = self.bme.measure(&mut timer).expect("Getting the BME280 measurements.");
+
+        self.recent_data.temperature = measurements.temperature;
+        self.recent_data.pressure = measurements.pressure;
+        self.recent_data.humidity = measurements.humidity;
     }
 }
