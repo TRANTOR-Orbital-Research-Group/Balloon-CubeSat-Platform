@@ -1,8 +1,7 @@
 #![no_std]
 
 use bme280::i2c::BME280;
-use rp235x_hal::{I2C, pac::I2C1, gpio};
-use heapless::string;
+use rp235x_hal::{I2C, Timer, gpio, pac::I2C1, timer::CopyableTimer0};
 
 struct BME280Data
 {
@@ -23,17 +22,17 @@ impl BME280Data
         }
     }
 
-    pub fn get_output_string(&self) -> heapless::String<128>
+    pub fn get_output_string(&self) -> String
     {
-        /*return String::try_from("\nTemperature: ").unwrap() + &self.temperature.to_string() 
-        + "\nPressure: " + &self.pressure.to_string() + "\nHumidity: " + &self.humidity.to_string();*/
+        return "\nTemperature: ".to_owned() + &self.temperature.to_string() + "\nPressure: " + &self.pressure.to_string()
+        + "\nHumidity: " + &self.humidity.to_string();
     }
 }
 
 /*
 The type parameters should be of the form rp235x_hal::gpio::bank0::GpioXX
 */
-pub struct TRANTOR_BME280<I2CGpioPin1, I2CGpioPin2>
+pub struct TRANTOR_BME280<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId>
 {
     bme: BME280<
             rp235x_hal::I2C<
@@ -55,19 +54,22 @@ pub struct TRANTOR_BME280<I2CGpioPin1, I2CGpioPin2>
     pub recent_data: BME280Data
 }
 
-impl TRANTOR_BME280<I2CGpioPin1, I2CGpioPin2>
+impl<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId> TRANTOR_BME280<I2CGpioPin1, I2CGpioPin2>
 {
-    pub fn new(i2c: I2C) -> TRANTOR_BME280<I2CGpioPin1, I2CGpioPin2>
+    pub fn new(i2c: I2C<I2C1, (
+        gpio::Pin<I2CGpioPin1, gpio::FunctionI2c, gpio::PullUp>, 
+        gpio::Pin<I2CGpioPin2, gpio::FunctionI2c, gpio::PullUp>
+        )>) -> TRANTOR_BME280<I2CGpioPin1, I2CGpioPin2>
     {
         return TRANTOR_BME280
         {
             bme: BME280::new_primary(i2c),
-            recent_data: BMEData::new_null()
+            recent_data: BME280Data::new_null()
         }
     }
 
-    pub fn init(&self, &timer: DelayNs)
+    pub fn init(&mut self, mut timer: Timer<CopyableTimer0>)
     {
-        self.bme.init(timer);
+        self.bme.init(&mut timer);
     }
 }
