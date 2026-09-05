@@ -1,7 +1,7 @@
-#![no_std]
-
 use bme280::i2c::BME280;
 use rp235x_hal::{I2C, Timer, gpio, pac::I2C1};
+use core::fmt::Write;
+use heapless::String;
 
 struct BME280Data
 {
@@ -22,10 +22,14 @@ impl BME280Data
         }
     }
 
-    pub fn get_output_string(&self) -> String
+    pub fn get_output_string(&self) -> heapless::String<128>
     {
-        return "\nTemperature: ".to_owned() + &self.temperature.to_string() + "\nPressure: " + &self.pressure.to_string()
-        + "\nHumidity: " + &self.humidity.to_string();
+        let mut output: String<128> = String::new();
+
+        write!(output, "\nTemperature: {}\nPressure: {}\nHumidity: {}", &self.temperature, &self.pressure, &self.humidity)
+            .expect("Create BME280 output message");
+
+        return output;
     }
 }
 
