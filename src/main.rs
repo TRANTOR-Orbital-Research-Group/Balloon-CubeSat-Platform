@@ -26,7 +26,7 @@ pub static IMAGE_DEF: ImageDef = hal::block::ImageDef::secure_exe();
 #[rtic::app(device = hal::pac, dispatchers = [UART0_IRQ])]
 mod app {
     use super::*;
-    use bme280::i2c::BME280;
+    use TRANTOR_BME280::TRANTORBME280;
     use rp235x_hal::{pac::{I2C0, otp_data::key1_3}, timer::CopyableTimer0};
     use usb_device::{class_prelude::*, prelude::*};
     use usbd_serial::SerialPort;
@@ -45,26 +45,7 @@ mod app {
         timer: hal::Timer<hal::timer::CopyableTimer0>,
         usb_dev: UsbDevice<'static, hal::usb::UsbBus>,
         serial: SerialPort<'static, hal::usb::UsbBus>,
-
-        // I apologize profusely because of how horrible this looks
-        // We should be able to make a type out of this later for readability though
-        // bme: BME280<
-        //     rp235x_hal::I2C<
-        //         rp235x_hal::pac::I2C1,
-        //         (
-        //             rp235x_hal::gpio::Pin<
-        //                 rp235x_hal::gpio::bank0::Gpio18,
-        //                 rp235x_hal::gpio::FunctionI2c,
-        //                 rp235x_hal::gpio::PullUp,
-        //             >,
-        //             rp235x_hal::gpio::Pin<
-        //                 rp235x_hal::gpio::bank0::Gpio19,
-        //                 rp235x_hal::gpio::FunctionI2c,
-        //                 rp235x_hal::gpio::PullUp,
-        //             >,
-        //         ),
-        //     >
-        // >,
+        temp_sensor: TRANTOR_BME280::TRANTORBME280<hal::gpio::bank0::Gpio18, hal::gpio::bank0::Gpio19>
 
     }
 
@@ -111,35 +92,37 @@ mod app {
         ));
 
         // Creating a serial port on the bus
-        let serial = SerialPort::new(usb_bus_alloc);
+        let mut serial = SerialPort::new(usb_bus_alloc);
 
         // Creating a serial device that uses that port and that bus
-        let usb_dev = UsbDeviceBuilder::new(usb_bus_alloc, UsbVidPid(0x16c0, 0x27dd))
+        let mut usb_dev = UsbDeviceBuilder::new(usb_bus_alloc, UsbVidPid(0x16c0, 0x27dd))
             .strings(&[StringDescriptors::default().product("RTIC Serial")])
             .unwrap()
             .device_class(2)
             .build();
 
-        // -----------------------------------Added Stuff-----------------------------------
+         //Waiting for the usb initialize and connect to the computer
+        while !serial.dtr() {
+            usb_dev.poll(&mut [&mut serial]);
+        }
 
-        // // Creating a new i2c bus on pins 18 and 19
-        // let i2c = I2C::i2c1(
-        //         cx.device.I2C1,
-        //         pins.gpio18.reconfigure(), // sda
-        //         pins.gpio19.reconfigure(), // scl
-        //         400.kHz(),
-        //         &mut resets,
-        //         125_000_000.Hz(),
-        // );
+        // Creating a new i2c bus on pins 18 and 19
+        let i2c = I2C::i2c1(
+                cx.device.I2C1,
+                pins.gpio18.reconfigure(), // sda
+                pins.gpio19.reconfigure(), // scl
+                400.kHz(),
+                &mut resets,
+                125_000_000.Hz(),
+        );
 
-        // Creating the BME
-        // let mut bme = BME280::new_secondary(i2c);
-        // bme.init(&mut timer).expect("Initialize BME280");
+        let _ = serial.write(b"Hello World\r\n");
 
-        // ---------------------------------------------------------------------------------
-        
+        //Creating the BME temperature sensor
+        let temp_sensor = TRANTOR_BME280::TRANTORBME280::new(i2c);
+
         // Returning our two structs
-        (Shared {}, Local { led, timer, usb_dev, serial})//, bme })
+        (Shared {}, Local { led, timer, usb_dev, serial, temp_sensor })
     }
 
 
@@ -148,7 +131,7 @@ mod app {
     // The thing above it is a flag that tells Rust what it will have in scope; currently we just have 
     // a local set of variables because we don't need any shared variables right now
     // It takes in a context, which is how you access all of the variables in local and shared.
-    #[idle(shared = [], local = [ led, timer, usb_dev, serial])]//, bme ])]
+    #[idle(shared = [], local = [ led, timer, usb_dev, serial, temp_sensor ])]
     fn idle(cx: idle::Context) -> ! {
 
         // This is a simple last time timer implementation
@@ -169,16 +152,11 @@ mod app {
             // Checking to see if enough time has passed to send a heartbeat
             if (now - last_send) >= interval {
 
-                // // Taking the measurements
-                // let measurements = cx.local.bme.measure(cx.local.timer).expect("Take measurements");
+                // Taking the measurements
+                cx.local.temp_sensor.record_data(cx.local.timer);
 
-                // // Creating the message string (make sure this isn't too small, if you do it just straight up panics)
-                // let mut message: String<128> = String::new();
-                // write!(message, "Humidity: {}%\n\rTemperature: {} deg C\n\rPressure: {} pascals\n\r",
-                //  measurements.humidity, measurements.temperature, measurements.pressure).expect("Create output message");
-
-                // // Writing it 
-                // let _ = cx.local.serial.write(message.as_bytes());
+                // Writing it 
+                //let _ = cx.local.serial.write(cx.local.temp_sensor.recent_data.get_output_string().as_bytes());
 
                 let _ = cx.local.serial.write(b"Connected and looping\r\n");
                 last_send = now;

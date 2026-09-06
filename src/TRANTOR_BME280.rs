@@ -3,7 +3,7 @@ use rp235x_hal::{I2C, Timer, gpio, pac::I2C1};
 use core::fmt::Write;
 use heapless::String;
 
-struct BME280Data
+pub struct BME280Data
 {
     pub temperature: f32,
     pub pressure: f32,
@@ -84,12 +84,12 @@ impl<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId>
         }
     }
 
-    pub fn init<CopyableTimer: rp235x_hal::timer::TimerDevice>(&mut self, mut timer: Timer<CopyableTimer>)
+    pub fn init<CopyableTimer: rp235x_hal::timer::TimerDevice>(&mut self, mut timer: &mut Timer<CopyableTimer>)
     {
         self.bme.init(&mut timer).expect("Initializing BME280");
     }
 
-    pub fn record_data<CopyableTimer: rp235x_hal::timer::TimerDevice>(&mut self, mut timer: Timer<CopyableTimer>)
+    pub fn record_data<CopyableTimer: rp235x_hal::timer::TimerDevice>(&mut self, mut timer: &mut Timer<CopyableTimer>)
     {
         let measurements = self.bme.measure(&mut timer).expect("Getting the BME280 measurements.");
 

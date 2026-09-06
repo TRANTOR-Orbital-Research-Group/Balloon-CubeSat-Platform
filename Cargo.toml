@@ -1,10 +1,10 @@
 [package]
-name = "flight-code"
+name = "balloon-cubesat-platform"
 version = "0.2.0"
 edition = "2024"
 
 [[bin]]
-name = "flight-code"
+name = "balloon-cubesat-platform"
 test = false
 bench = false
 
