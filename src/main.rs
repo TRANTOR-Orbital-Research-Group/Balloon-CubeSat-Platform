@@ -48,23 +48,23 @@ mod app {
 
         // I apologize profusely because of how horrible this looks
         // We should be able to make a type out of this later for readability though
-        bme: BME280<
-            rp235x_hal::I2C<
-                rp235x_hal::pac::I2C1,
-                (
-                    rp235x_hal::gpio::Pin<
-                        rp235x_hal::gpio::bank0::Gpio18,
-                        rp235x_hal::gpio::FunctionI2c,
-                        rp235x_hal::gpio::PullUp,
-                    >,
-                    rp235x_hal::gpio::Pin<
-                        rp235x_hal::gpio::bank0::Gpio19,
-                        rp235x_hal::gpio::FunctionI2c,
-                        rp235x_hal::gpio::PullUp,
-                    >,
-                ),
-            >
-        >,
+        // bme: BME280<
+        //     rp235x_hal::I2C<
+        //         rp235x_hal::pac::I2C1,
+        //         (
+        //             rp235x_hal::gpio::Pin<
+        //                 rp235x_hal::gpio::bank0::Gpio18,
+        //                 rp235x_hal::gpio::FunctionI2c,
+        //                 rp235x_hal::gpio::PullUp,
+        //             >,
+        //             rp235x_hal::gpio::Pin<
+        //                 rp235x_hal::gpio::bank0::Gpio19,
+        //                 rp235x_hal::gpio::FunctionI2c,
+        //                 rp235x_hal::gpio::PullUp,
+        //             >,
+        //         ),
+        //     >
+        // >,
 
     }
 
@@ -122,24 +122,24 @@ mod app {
 
         // -----------------------------------Added Stuff-----------------------------------
 
-        // Creating a new i2c bus on pins 18 and 19
-        let i2c = I2C::i2c1(
-                cx.device.I2C1,
-                pins.gpio18.reconfigure(), // sda
-                pins.gpio19.reconfigure(), // scl
-                400.kHz(),
-                &mut resets,
-                125_000_000.Hz(),
-        );
+        // // Creating a new i2c bus on pins 18 and 19
+        // let i2c = I2C::i2c1(
+        //         cx.device.I2C1,
+        //         pins.gpio18.reconfigure(), // sda
+        //         pins.gpio19.reconfigure(), // scl
+        //         400.kHz(),
+        //         &mut resets,
+        //         125_000_000.Hz(),
+        // );
 
         // Creating the BME
-        let mut bme = BME280::new_secondary(i2c);
-        bme.init(&mut timer).unwrap();
+        // let mut bme = BME280::new_secondary(i2c);
+        // bme.init(&mut timer).expect("Initialize BME280");
 
         // ---------------------------------------------------------------------------------
         
         // Returning our two structs
-        (Shared {}, Local { led, timer, usb_dev, serial, bme })
+        (Shared {}, Local { led, timer, usb_dev, serial})//, bme })
     }
 
 
@@ -148,7 +148,7 @@ mod app {
     // The thing above it is a flag that tells Rust what it will have in scope; currently we just have 
     // a local set of variables because we don't need any shared variables right now
     // It takes in a context, which is how you access all of the variables in local and shared.
-    #[idle(shared = [], local = [ led, timer, usb_dev, serial, bme ])]
+    #[idle(shared = [], local = [ led, timer, usb_dev, serial])]//, bme ])]
     fn idle(cx: idle::Context) -> ! {
 
         // This is a simple last time timer implementation
@@ -169,17 +169,18 @@ mod app {
             // Checking to see if enough time has passed to send a heartbeat
             if (now - last_send) >= interval {
 
-                // Taking the measurements
-                let measurements = cx.local.bme.measure(cx.local.timer).unwrap();
+                // // Taking the measurements
+                // let measurements = cx.local.bme.measure(cx.local.timer).expect("Take measurements");
 
-                // Creating the message string (make sure this isn't too small, if you do it just straight up panics)
-                let mut message: String<128> = String::new();
-                write!(message, "Humidity: {}%\n\rTemperature: {} deg C\n\rPressure: {} pascals\n\r", measurements.humidity, measurements.temperature, measurements.pressure).unwrap();
+                // // Creating the message string (make sure this isn't too small, if you do it just straight up panics)
+                // let mut message: String<128> = String::new();
+                // write!(message, "Humidity: {}%\n\rTemperature: {} deg C\n\rPressure: {} pascals\n\r",
+                //  measurements.humidity, measurements.temperature, measurements.pressure).expect("Create output message");
 
-                // Writing it 
-                let _ = cx.local.serial.write(message.as_bytes());
+                // // Writing it 
+                // let _ = cx.local.serial.write(message.as_bytes());
 
-                // let _ = cx.local.serial.write(b"Connected and looping\r\n");
+                let _ = cx.local.serial.write(b"Connected and looping\r\n");
                 last_send = now;
             }
 

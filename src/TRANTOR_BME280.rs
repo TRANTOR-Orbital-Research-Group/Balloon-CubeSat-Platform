@@ -36,7 +36,7 @@ impl BME280Data
 /*
 The type parameters should be of the form rp235x_hal::gpio::bank0::GpioXX
 */
-pub struct TRANTOR_BME280<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId>
+pub struct TRANTORBME280<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId>
 {
     bme: BME280<
             rp235x_hal::I2C<
@@ -58,14 +58,14 @@ pub struct TRANTOR_BME280<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp2
     pub recent_data: BME280Data
 }
 
-impl<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId> TRANTOR_BME280<I2CGpioPin1, I2CGpioPin2>
+impl<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId> TRANTORBME280<I2CGpioPin1, I2CGpioPin2>
 {
     pub fn new(i2c: I2C<I2C1, (
         gpio::Pin<I2CGpioPin1, gpio::FunctionI2c, gpio::PullUp>, 
         gpio::Pin<I2CGpioPin2, gpio::FunctionI2c, gpio::PullUp>
-        )>) -> TRANTOR_BME280<I2CGpioPin1, I2CGpioPin2>
+        )>) -> TRANTORBME280<I2CGpioPin1, I2CGpioPin2>
     {
-        return TRANTOR_BME280
+        return TRANTORBME280
         {
             bme: BME280::new_primary(i2c),
             recent_data: BME280Data::new_null()
@@ -75,9 +75,9 @@ impl<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId>
     pub fn new_with_custom_address(i2c: I2C<I2C1, (
         gpio::Pin<I2CGpioPin1, gpio::FunctionI2c, gpio::PullUp>, 
         gpio::Pin<I2CGpioPin2, gpio::FunctionI2c, gpio::PullUp>
-        )>, i2c_address: u8) -> TRANTOR_BME280<I2CGpioPin1, I2CGpioPin2>
+        )>, i2c_address: u8) -> TRANTORBME280<I2CGpioPin1, I2CGpioPin2>
     {
-        return TRANTOR_BME280
+        return TRANTORBME280
         {
             bme: BME280::new(i2c, i2c_address),
             recent_data: BME280Data::new_null()
