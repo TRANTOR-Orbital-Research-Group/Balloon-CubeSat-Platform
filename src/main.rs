@@ -1,17 +1,13 @@
 #![no_std]
 #![no_main]
 
+mod panic_handling;
 mod TRANTOR_BME280;
 
-use rp235x_hal::{self as hal, gpio::Pins, i2c::I2C, Sio, Timer};
+use rp235x_hal::{self as hal, i2c::I2C};
 use {panic_probe as _};
-use embedded_hal::digital::OutputPin;
 use defmt_rtt as _;
-use rp235x_hal::reboot::{reboot, RebootKind, RebootArch};
 use fugit::RateExtU32;
-use heapless::String;
-use core::fmt::Write;
-
 
 // Tells the Rust where to put the actual image (I think) 
 use hal::block::ImageDef;
@@ -27,7 +23,6 @@ pub static IMAGE_DEF: ImageDef = hal::block::ImageDef::secure_exe();
 mod app {
     use super::*;
     use TRANTOR_BME280::TRANTORBME280;
-    use rp235x_hal::{pac::{I2C0, otp_data::key1_3}, timer::CopyableTimer0};
     use usb_device::{class_prelude::*, prelude::*};
     use usbd_serial::SerialPort;
 
@@ -84,7 +79,7 @@ mod app {
         let led = pins.gpio25.into_push_pull_output();
 
         // The timer that we need in our Local struct for our idle task
-        let mut timer = hal::Timer::new_timer0(cx.device.TIMER0, &mut resets, &clocks);
+        let timer = hal::Timer::new_timer0(cx.device.TIMER0, &mut resets, &clocks);
 
         // Initializing the usb bus so that we can make a device that uses the bus for our Local struct
         let usb_bus_alloc = cx.local.usb_bus.insert(UsbBusAllocator::new(
@@ -116,10 +111,8 @@ mod app {
                 125_000_000.Hz(),
         );
 
-        let _ = serial.write(b"Hello World\r\n");
-
         //Creating the BME temperature sensor
-        let temp_sensor = TRANTOR_BME280::TRANTORBME280::new(i2c);
+        let temp_sensor = TRANTOR_BME280::TRANTORBME280::new(i2c, timer);
 
         // Returning our two structs
         (Shared {}, Local { led, timer, usb_dev, serial, temp_sensor })
@@ -140,6 +133,8 @@ mod app {
         // The interval that we are waiting on to send a heartbeat
         let interval = fugit::MicrosDurationU64::micros(2_000_000);
 
+        let _ = cx.local.serial.write(b"Before Idle loop\r\n");
+
         // This is what you can think of as the actual loop. 
         loop { 
 
@@ -156,9 +151,8 @@ mod app {
                 cx.local.temp_sensor.record_data(cx.local.timer);
 
                 // Writing it 
-                //let _ = cx.local.serial.write(cx.local.temp_sensor.recent_data.get_output_string().as_bytes());
+                let _ = cx.local.serial.write(cx.local.temp_sensor.recent_data.get_output_string().as_bytes());
 
-                let _ = cx.local.serial.write(b"Connected and looping\r\n");
                 last_send = now;
             }
 
