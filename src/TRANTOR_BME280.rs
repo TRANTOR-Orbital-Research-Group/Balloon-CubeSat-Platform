@@ -1,5 +1,5 @@
 use bme280::i2c::BME280;
-use rp235x_hal::{I2C, Timer, gpio, pac::I2C1};
+use rp235x_hal::{I2C, gpio, pac::I2C1};
 use core::fmt::Write;
 use heapless::String;
 
@@ -58,7 +58,8 @@ pub struct TRANTORBME280<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp23
     pub recent_data: BME280Data
 }
 
-impl<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId> TRANTORBME280<I2CGpioPin1, I2CGpioPin2>
+impl<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId> 
+    TRANTORBME280<I2CGpioPin1, I2CGpioPin2>
 {
     pub fn new<DelayNs: embedded_hal::delay::DelayNs>(i2c: I2C<I2C1, (
         gpio::Pin<I2CGpioPin1, gpio::FunctionI2c, gpio::PullUp>, 

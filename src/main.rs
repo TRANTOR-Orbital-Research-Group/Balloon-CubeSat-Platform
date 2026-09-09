@@ -3,6 +3,7 @@
 
 mod panic_handling;
 mod TRANTOR_BME280;
+mod TRANTOR_BNO08X;
 
 use rp235x_hal::{self as hal, i2c::I2C};
 use {panic_probe as _};
