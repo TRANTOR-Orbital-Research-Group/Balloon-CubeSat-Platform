@@ -22,7 +22,6 @@ pub static IMAGE_DEF: ImageDef = hal::block::ImageDef::secure_exe();
 #[rtic::app(device = hal::pac, dispatchers = [UART0_IRQ])]
 mod app {
     use super::*;
-    use TRANTOR_BME280::TRANTORBME280;
     use usb_device::{class_prelude::*, prelude::*};
     use usbd_serial::SerialPort;
 

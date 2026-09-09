@@ -2,8 +2,6 @@ use bme280::i2c::BME280;
 use rp235x_hal::{I2C, Timer, gpio, pac::I2C1};
 use core::fmt::Write;
 use heapless::String;
-use embedded_hal::delay::DelayNs;
-use crate::panic_handling;
 
 pub struct BME280Data
 {
