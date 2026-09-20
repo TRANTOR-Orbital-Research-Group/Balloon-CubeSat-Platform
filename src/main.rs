@@ -6,6 +6,8 @@ mod TRANTOR_BME280;
 mod TRANTOR_BNO08X;
 
 use rp235x_hal::{self as hal, i2c::I2C};
+use embedded_hal_bus::i2c::RefCellDevice;
+use core::cell::RefCell;
 use {panic_probe as _};
 use defmt_rtt as _;
 use fugit::RateExtU32;
@@ -21,7 +23,8 @@ pub static IMAGE_DEF: ImageDef = hal::block::ImageDef::secure_exe();
 // which means that they all have a priority 2 for RTIC. We can (and likely will) add more dispatchers later so that we can have different 
 // priorities for all of our different software tasks
 #[rtic::app(device = hal::pac, dispatchers = [UART0_IRQ])]
-mod app {
+mod app 
+{
     use super::*;
     use usb_device::{class_prelude::*, prelude::*};
     use usbd_serial::SerialPort;
@@ -40,14 +43,30 @@ mod app {
         timer: hal::Timer<hal::timer::CopyableTimer0>,
         usb_dev: UsbDevice<'static, hal::usb::UsbBus>,
         serial: SerialPort<'static, hal::usb::UsbBus>,
-        temp_sensor: TRANTOR_BME280::TRANTORBME280<hal::gpio::bank0::Gpio18, hal::gpio::bank0::Gpio19>
-
+        temp_sensor: TRANTOR_BME280::TRANTORBME280<'static, hal::gpio::bank0::Gpio18, hal::gpio::bank0::Gpio19>,
+        imu: TRANTOR_BNO08X::TRANTORBNO08X<'static, hal::gpio::bank0::Gpio18, hal::gpio::bank0::Gpio19>
     }
 
 
     // This is the init task, which is a lot like the `void setup()` function in Arduino cpp
     // Note that it creates the Shared and Local structs that our tasks get to use
-    #[init(local = [usb_bus: Option<UsbBusAllocator<hal::usb::UsbBus>> = None])]
+    #[init(local = [
+        usb_bus: Option<UsbBusAllocator<hal::usb::UsbBus>> = None,
+        i2c_ref: Option<RefCell<I2C<
+            hal::pac::I2C1,
+            (
+                hal::gpio::Pin<
+                    hal::gpio::bank0::Gpio18,
+                    hal::gpio::FunctionI2c,
+                    hal::gpio::PullUp,
+                >,
+                hal::gpio::Pin<
+                    hal::gpio::bank0::Gpio19,
+                    hal::gpio::FunctionI2c,
+                    hal::gpio::PullUp,
+                >,
+            )>>> = None
+        ])]
     fn init(cx: init::Context) -> (Shared, Local) {
 
         // All of the peripherals are off when the pico powers on, so we need the resets controller to be able to turn them on
@@ -111,11 +130,17 @@ mod app {
                 125_000_000.Hz(),
         );
 
+        // Assign value to global RTIC I2C variable
+        let i2c_ref = cx.local.i2c_ref.insert(RefCell::new(i2c));
+
         //Creating the BME temperature sensor
-        let temp_sensor = TRANTOR_BME280::TRANTORBME280::new(i2c, timer);
+        let temp_sensor = TRANTOR_BME280::TRANTORBME280::new(RefCellDevice::new(i2c_ref), timer);
+
+        //Creating the BNO085 IMU
+        let imu = TRANTOR_BNO08X::TRANTORBNO08X::new(RefCellDevice::new(i2c_ref), 50, timer);
 
         // Returning our two structs
-        (Shared {}, Local { led, timer, usb_dev, serial, temp_sensor })
+        (Shared {}, Local { led, timer, usb_dev, serial, temp_sensor, imu })
     }
 
 

@@ -1,5 +1,6 @@
 use bme280::i2c::BME280;
 use rp235x_hal::{I2C, gpio, pac::I2C1};
+use embedded_hal_bus::i2c::RefCellDevice;
 use core::fmt::Write;
 use heapless::String;
 
@@ -36,10 +37,10 @@ impl BME280Data
 /*
 The type parameters should be of the form rp235x_hal::gpio::bank0::GpioXX
 */
-pub struct TRANTORBME280<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId>
+pub struct TRANTORBME280<'a, I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId>
 {
     bme: BME280<
-            rp235x_hal::I2C<
+            RefCellDevice<'a, rp235x_hal::I2C<
                 rp235x_hal::pac::I2C1,
                 (
                     rp235x_hal::gpio::Pin<
@@ -53,18 +54,18 @@ pub struct TRANTORBME280<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp23
                         rp235x_hal::gpio::PullUp,
                     >,
                 ),
-            >
+            >>
         >,
     pub recent_data: BME280Data
 }
 
 impl<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId> 
-    TRANTORBME280<I2CGpioPin1, I2CGpioPin2>
+    TRANTORBME280<'_, I2CGpioPin1, I2CGpioPin2>
 {
-    pub fn new<DelayNs: embedded_hal::delay::DelayNs>(i2c: I2C<I2C1, (
+    pub fn new<DelayNs: embedded_hal::delay::DelayNs>(i2c: RefCellDevice<'_, I2C<I2C1, (
         gpio::Pin<I2CGpioPin1, gpio::FunctionI2c, gpio::PullUp>, 
         gpio::Pin<I2CGpioPin2, gpio::FunctionI2c, gpio::PullUp>
-        )>, mut timer: DelayNs) -> TRANTORBME280<I2CGpioPin1, I2CGpioPin2>
+        )>>, mut timer: DelayNs) -> TRANTORBME280<I2CGpioPin1, I2CGpioPin2>
     {
         let mut new_bme = BME280::new_secondary(i2c);
         new_bme.init(&mut timer).expect("Initializing BME280");
@@ -76,10 +77,10 @@ impl<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId>
         }
     }
 
-    pub fn new_with_custom_address<DelayNs: embedded_hal::delay::DelayNs>(i2c: I2C<I2C1, (
+    pub fn new_with_custom_address<DelayNs: embedded_hal::delay::DelayNs>(i2c: RefCellDevice<'_, I2C<I2C1, (
         gpio::Pin<I2CGpioPin1, gpio::FunctionI2c, gpio::PullUp>, 
         gpio::Pin<I2CGpioPin2, gpio::FunctionI2c, gpio::PullUp>
-        )>, i2c_address: u8, mut timer: DelayNs) -> TRANTORBME280<I2CGpioPin1, I2CGpioPin2>
+        )>>, i2c_address: u8, mut timer: DelayNs) -> TRANTORBME280<I2CGpioPin1, I2CGpioPin2>
     {
         let mut new_bme = BME280::new(i2c, i2c_address);
         new_bme.init(&mut timer).expect("Initializing BME280");
