@@ -40,24 +40,53 @@ impl BNO08XData
         }
     }
 
-    pub fn get_output_string(&self) -> heapless::String<128>
+    pub fn get_output_pos_string(&self) -> (heapless::String<512>, heapless::String<512>)
     {
-        let mut output: String<128> = String::new();
+        let mut output1: String<512> = String::new();
+        let mut output2: String<512> = String::new();
 
-        write!(output, 
+        write!(output1, 
             "\n\rAngular Position, Real: {}
             \n\rAngular Position, i: {}
-            \n\rAngular Position, j: {}
-            \n\rAngular Position, k: {}\n
-            \n\rAngular velocity, i: {}
+            "
+                , &self.angle_pos_real, &self.angle_pos_i)
+                .expect("Creating BNO08X position output message 1");
+
+        write!(output2, 
+            "\n\rAngular Position, j: {}
+            \n\rAngular Position, k: {}
+            "
+                , &self.angle_pos_j, &self.angle_pos_k)
+                .expect("Creating BNO08X position output message 2");
+
+        return (output1, output2);
+    }
+
+    pub fn get_output_velocity_string(&self) -> heapless::String<512>
+    {
+        let mut output: String<512> = String::new();
+
+        write!(output, 
+            "\n\rAngular velocity, i: {}
             \n\rAngular velocity, j: {}
-            \n\rAngular velocity, k: {}\n
+            \n\rAngular velocity, k: {}
+            "
+                , &self.angle_velocity_i, &self.angle_velocity_j, &self.angle_velocity_k)
+                .expect("Creating BNO08X velocity output message");
+
+        return output;
+    }
+
+    pub fn get_output_accel_string(&self) -> heapless::String<512>
+    {
+        let mut output: String<512> = String::new();
+
+        write!(output, 
+            "
             \n\rLinear acceleration, x: {}
             \n\rLinear acceleration, y: {}
             \n\rLinear acceleration, z: {}
             "
-                , &self.angle_pos_real, &self.angle_pos_i, &self.angle_pos_j, &self.angle_pos_k
-                , &self.angle_velocity_i, &self.angle_velocity_j, &self.angle_velocity_k
                 , &self.linear_acceleration_x, &self.linear_acceleration_y, &self.linear_acceleration_z)
                 .expect("Creating BNO08X output message");
 
@@ -77,7 +106,7 @@ pub struct TRANTORBNO08X<'a, I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: 
                     >
                 >>
             >,
-    recent_data: BNO08XData
+    pub recent_data: BNO08XData
 }
 
 impl<I2CGpioPin1: rp235x_hal::gpio::PinId, I2CGpioPin2: rp235x_hal::gpio::PinId> 

@@ -149,14 +149,14 @@ mod app
     // The thing above it is a flag that tells Rust what it will have in scope; currently we just have 
     // a local set of variables because we don't need any shared variables right now
     // It takes in a context, which is how you access all of the variables in local and shared.
-    #[idle(shared = [], local = [ led, timer, usb_dev, serial, temp_sensor ])]
+    #[idle(shared = [], local = [ led, timer, usb_dev, serial, temp_sensor, imu ])]
     fn idle(cx: idle::Context) -> ! {
 
         // This is a simple last time timer implementation
         let mut last_send = cx.local.timer.get_counter();
 
         // The interval that we are waiting on to send a heartbeat
-        let interval = fugit::MicrosDurationU64::micros(2_000_000);
+        let interval = fugit::MicrosDurationU64::micros(500_000);
 
         let _ = cx.local.serial.write(b"Before Idle loop\r\n");
 
@@ -174,9 +174,20 @@ mod app
 
                 // Taking the measurements
                 cx.local.temp_sensor.record_data(cx.local.timer);
+                cx.local.imu.record_data(cx.local.timer, 1u8);
 
-                // Writing it 
-                let _ = cx.local.serial.write(cx.local.temp_sensor.recent_data.get_output_string().as_bytes());
+                let (pos_output1, pos_output2) = cx.local.imu.recent_data.get_output_pos_string();
+
+                // Writing measurements 
+                // let _ = cx.local.serial.write(cx.local.temp_sensor.recent_data.get_output_string().as_bytes());
+                // let _ = cx.local.serial.write(b"\n");
+                let _ = cx.local.serial.write(pos_output1.as_bytes());
+                let _ = cx.local.serial.write(pos_output2.as_bytes());
+                let _ = cx.local.serial.write(b"\n");
+                // let _ = cx.local.serial.write(cx.local.imu.recent_data.get_output_velocity_string().as_bytes());
+                // let _ = cx.local.serial.write(b"\n");
+                // let _ = cx.local.serial.write(cx.local.imu.recent_data.get_output_accel_string().as_bytes());
+                // let _ = cx.local.serial.write(b"\n");
 
                 last_send = now;
             }
