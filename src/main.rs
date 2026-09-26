@@ -176,18 +176,20 @@ mod app
                 cx.local.temp_sensor.record_data(cx.local.timer);
                 cx.local.imu.record_data(cx.local.timer, 1u8);
 
-                let (pos_output1, pos_output2) = cx.local.imu.recent_data.get_output_pos_string();
+                //let (pos_output1, pos_output2) = cx.local.imu.recent_data.get_output_pos_string();
+                let (linaccel_output1, linaccel_output2) = cx.local.imu.recent_data.get_output_accel_strings();
 
                 // Writing measurements 
                 // let _ = cx.local.serial.write(cx.local.temp_sensor.recent_data.get_output_string().as_bytes());
                 // let _ = cx.local.serial.write(b"\n");
-                let _ = cx.local.serial.write(pos_output1.as_bytes());
-                let _ = cx.local.serial.write(pos_output2.as_bytes());
-                let _ = cx.local.serial.write(b"\n");
+                // let _ = cx.local.serial.write(pos_output1.as_bytes());
+                // let _ = cx.local.serial.write(pos_output2.as_bytes());
+                // let _ = cx.local.serial.write(b"\n");
                 // let _ = cx.local.serial.write(cx.local.imu.recent_data.get_output_velocity_string().as_bytes());
                 // let _ = cx.local.serial.write(b"\n");
-                // let _ = cx.local.serial.write(cx.local.imu.recent_data.get_output_accel_string().as_bytes());
-                // let _ = cx.local.serial.write(b"\n");
+                let _ = cx.local.serial.write(linaccel_output1.as_bytes());
+                let _ = cx.local.serial.write(linaccel_output2.as_bytes());
+                let _ = cx.local.serial.write(b"\n");
 
                 last_send = now;
             }

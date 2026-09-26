@@ -40,7 +40,7 @@ impl BNO08XData
         }
     }
 
-    pub fn get_output_pos_string(&self) -> (heapless::String<512>, heapless::String<512>)
+    pub fn get_output_pos_strings(&self) -> (heapless::String<512>, heapless::String<512>)
     {
         let mut output1: String<512> = String::new();
         let mut output2: String<512> = String::new();
@@ -77,20 +77,27 @@ impl BNO08XData
         return output;
     }
 
-    pub fn get_output_accel_string(&self) -> heapless::String<512>
+    pub fn get_output_accel_strings(&self) -> (heapless::String<512>, heapless::String<512>)
     {
-        let mut output: String<512> = String::new();
+        let mut output1: String<512> = String::new();
+        let mut output2: String<512> = String::new();
 
-        write!(output, 
+        write!(output1, 
             "
             \n\rLinear acceleration, x: {}
             \n\rLinear acceleration, y: {}
+            "
+                , &self.linear_acceleration_x, &self.linear_acceleration_y)
+                .expect("Creating BNO08X linear acceleration output message 1");
+
+        write!(output2, 
+            "
             \n\rLinear acceleration, z: {}
             "
-                , &self.linear_acceleration_x, &self.linear_acceleration_y, &self.linear_acceleration_z)
-                .expect("Creating BNO08X output message");
+                , &self.linear_acceleration_z)
+                .expect("Creating BNO08X linear acceleration output message 2");
 
-        return output;
+        return (output1, output2);
     }
 }
 
