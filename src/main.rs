@@ -4,6 +4,7 @@
 mod panic_handling;
 mod TRANTOR_BME280;
 mod TRANTOR_BNO08X;
+mod ublox_gps;
 
 use rp235x_hal::{self as hal, i2c::I2C};
 use embedded_hal_bus::i2c::RefCellDevice;
@@ -187,9 +188,10 @@ mod app
                 // let _ = cx.local.serial.write(b"\n");
                 // let _ = cx.local.serial.write(cx.local.imu.recent_data.get_output_velocity_string().as_bytes());
                 // let _ = cx.local.serial.write(b"\n");
-                let _ = cx.local.serial.write(linaccel_output1.as_bytes());
-                let _ = cx.local.serial.write(linaccel_output2.as_bytes());
-                let _ = cx.local.serial.write(b"\n");
+                // let _ = cx.local.serial.write(linaccel_output1.as_bytes());
+                // let _ = cx.local.serial.write(linaccel_output2.as_bytes());
+                // let _ = cx.local.serial.write(b"\n");
+                //let _ cx.local.serial.write()
 
                 last_send = now;
             }
